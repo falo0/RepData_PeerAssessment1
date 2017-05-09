@@ -1,25 +1,79 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template"
+output: html_document
 ---
 
-
 ## Loading and preprocessing the data
-
-
+```{r echo=T}
+stepdf = read.csv("activity.csv")
+```
 
 ## What is mean total number of steps taken per day?
-
-
+```{r echo=T}
+totalstepsperday = tapply(stepdf$steps, stepdf$date, sum, na.rm = T)
+hist(totalstepsperday, breaks = 61)
+mean(totalstepsperday)
+median(totalstepsperday)
+```
 
 ## What is the average daily activity pattern?
+```{r echo=T}
+timeintervals = unique(stepdf$interval)
+meansperinterval = sapply(timeintervals, 
+              function(x) mean(stepdf$steps[stepdf$interval == x], na.rm = T))
+plot(timeintervals, meansperinterval, type = "l")
+#most active time interval:
+timeintervals[which(meansperinterval == max(meansperinterval))]
+```
 
 
+## Imputing missing values with interval means
+```{r echo=T}
+sum(is.na(stepdf$steps))
 
-## Imputing missing values
+naintervals = stepdf$interval[is.na(stepdf$steps)]
+imputedsteps = sapply(naintervals, function(x) meansperinterval[which(timeintervals == x)])
+stepdf$steps[is.na(stepdf$steps)] = imputedsteps
+#stepdf$interval
 
-
+totalstepsperday = tapply(stepdf$steps, stepdf$date, sum, na.rm = T)
+hist(totalstepsperday, breaks = 61)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r echo=T}
+weekday = weekdays(as.POSIXct(stepdf$date))
+weekendweekday = sapply(weekday, function(x) if(x=="Saturday" | x=="Sunday"){"weekend"}else{"weekday"})
+weekendweekday = as.factor(unname(weekendweekday))
+summary(weekendweekday)
+stepdf$weekpart = weekendweekday
+
+timeintervals = unique(stepdf$interval)
+
+
+wemeansperinterval = sapply(timeintervals, 
+                            function(x) mean(stepdf$steps[stepdf$interval == x & stepdf$weekpart == "weekend"], na.rm = T))
+wdmeansperinterval = sapply(timeintervals, 
+                            function(x) mean(stepdf$steps[stepdf$interval == x & stepdf$weekpart == "weekday"], na.rm = T))
+
+par(mfcol = c(2,1), mar = rep(5,4))
+plot(timeintervals, wemeansperinterval, type = "l", main = "Weekend", xlab = "Minute of the day, 0 is 12 am", ylab = "Average number of steps per 5 minute interval")
+plot(timeintervals, wdmeansperinterval, type = "l", main = "Weekday", xlab = "Minute of the day, 0 is 12 am", ylab = "Average number of steps per 5 minute interval")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
